@@ -1,0 +1,550 @@
+{
+  "name": "WF-0005\tTạo QR thanh toán kèm nội dung chuyển khoản",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message",
+          "*"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -672,
+        96
+      ],
+      "id": "df89597f-dd4e-4245-a406-717b9070f7d7",
+      "name": "Telegram Trigger",
+      "webhookId": "9b3cdda6-840c-4e01-b781-098e608f14ff",
+      "credentials": {
+        "telegramApi": {
+          "id": "6DoMqQMmFyuXZCrf",
+          "name": "Tạo mã QR thanh toán"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7372c3ea-186b-4b7f-b11f-98d092d24eca",
+              "name": "addInfo",
+              "value": "={{ $json.noi_dung_chuyen_khoan }}",
+              "type": "string"
+            },
+            {
+              "id": "a0cc4235-bb7c-45f3-ba07-20aa3d537b9c",
+              "name": "accountNo",
+              "value": "559868686",
+              "type": "string"
+            },
+            {
+              "id": "10f28cbf-16d9-4d8e-becb-0166d0d9e5df",
+              "name": "accountName",
+              "value": "PHAM NGOC QUANG",
+              "type": "string"
+            },
+            {
+              "id": "a6563dc5-a20a-40ce-90b2-800bdff972f3",
+              "name": "acqId",
+              "value": "VIB",
+              "type": "string"
+            },
+            {
+              "id": "bdfc9eea-f944-423f-961d-63544175ad36",
+              "name": "amount",
+              "value": "={{ $json.so_tien }}",
+              "type": "string"
+            },
+            {
+              "id": "bcc47341-1c33-4d06-b333-8e08933d0a33",
+              "name": "template",
+              "value": "compact2",
+              "type": "string"
+            },
+            {
+              "id": "9af21d87-aecd-4cff-9498-a19a5b5ec69c",
+              "name": "chat_id",
+              "value": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1472,
+        96
+      ],
+      "id": "c97ced53-8055-43cb-be29-e3f1bf51cdef",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.vietqr.io/image/{{ $json[\"acqId\"] }}-{{ $json[\"accountNo\"] }}-{{ $json[\"template\"] }}.png?amount={{ $json[\"amount\"] }}&addInfo={{ $json[\"addInfo\"] }}&accountName={{ $json[\"accountName\"] }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1696,
+        96
+      ],
+      "id": "f61a813c-bf17-4e57-9f73-405e69cce096",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "operation": "sendPhoto",
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "binaryData": true,
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1920,
+        96
+      ],
+      "id": "33522740-0973-46fb-a8cd-51d992d272a5",
+      "name": "Send a photo message",
+      "webhookId": "e5e0827c-f1e4-423e-888c-824c5f6ac003",
+      "credentials": {
+        "telegramApi": {
+          "id": "6DoMqQMmFyuXZCrf",
+          "name": "Tạo mã QR thanh toán"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $json.message.voice.file_id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "0ca7d290-2775-4693-843e-a1d963fe97b9",
+      "name": "Get a file",
+      "webhookId": "7232a9f7-1397-400e-b4fd-7a438abe38bd",
+      "credentials": {
+        "telegramApi": {
+          "id": "6DoMqQMmFyuXZCrf",
+          "name": "Tạo mã QR thanh toán"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "operation": "analyze",
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.0-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.0-flash"
+        },
+        "text": "Trích xuất âm thanh thành text",
+        "inputType": "binary",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        224,
+        0
+      ],
+      "id": "5b94df91-01a2-4623-856e-c12072fd8c84",
+      "name": "Analyze audio",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "jjmcjl7g2wfbC1ev",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.0-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.0-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=\n**Tin nhắn:** {{ $json.user_text }}"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {
+          "systemMessage": "=Bạn là một trợ lý phân tích tin nhắn ngân hàng. \nNhiệm vụ của bạn là trích xuất thông tin từ nội dung tin nhắn giao dịch tài chính và trả về dữ liệu JSON.\n\nHãy đọc kỹ tin nhắn đầu vào, sau đó trả về một JSON với hai trường sau:\n\n{\n  \"so_tien\": \"<số tiền được ghi trong tin nhắn, định dạng chỉ là số, không kèm ký hiệu tiền tệ>\",\n  \"noi_dung_chuyen_khoan\": \"<nội dung chuyển khoản, nếu không có thì để trống chuỗi>\"\n}\n\nYêu cầu:\n- Nếu tin nhắn có nhiều con số, hãy chọn **số tiền giao dịch chính** (thường là số tiền lớn nhất, hoặc ngay sau từ như “chuyển”, “ghi có”, “ghi nợ”, “đã nhận”, “đã gửi”).\n- Không được thêm ký hiệu tiền tệ (vd: “₫”, “VND”, “VNĐ”).\n- Nếu không có nội dung chuyển khoản, để trống giá trị của trường `\"noi_dung_chuyen_khoan\"`.\n- Kết quả trả về phải là **JSON hợp lệ**, không thêm lời giải thích.\n\nVí dụ:\n\n**Đầu vào 1:**  \n“TK 123456789 nhận 500,000đ từ NGUYEN VAN A. Nội dung: Mua hàng tháng 11.”  \n**Đầu ra:**  \n{\n  \"so_tien\": \"500000\",\n  \"noi_dung_chuyen_khoan\": \"Mua hàng tháng 11\"\n}\n\n**Đầu vào 2:**  \n“Tài khoản của bạn bị trừ 2.000.000đ. Số dư: 3.500.000đ.”  \n**Đầu ra:**  \n{\n  \"so_tien\": \"2000000\",\n  \"noi_dung_chuyen_khoan\": \"\"\n}\n\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        672,
+        96
+      ],
+      "id": "afacb377-c2ef-4521-b5cb-6049b2023dc7",
+      "name": "Message a model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "jjmcjl7g2wfbC1ev",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b39fb1db-16f6-47ce-9545-1f092acdc1a1",
+              "name": "thong_tin_thanh_toan",
+              "value": "={{ $json.content.parts[0].text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1024,
+        96
+      ],
+      "id": "56eaf1c6-79ec-4124-ac35-b8683da47ff7",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Lấy dữ liệu đầu vào từ node trước\nconst items = $input.all();\n\n// Duyệt qua từng item\nreturn items.map(item => {\n  let parsed = {};\n  try {\n    // Parse chuỗi JSON trong thong_tin_thanh_toan\n    parsed = JSON.parse(item.json.thong_tin_thanh_toan);\n  } catch (error) {\n    // Nếu lỗi, log ra và để trống\n    parsed = {\n      so_tien: \"\",\n      noi_dung_chuyen_khoan: \"\"\n    };\n  }\n\n  // Trả về kết quả hợp lệ\n  return {\n    json: parsed\n  };\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1248,
+        96
+      ],
+      "id": "c4ccbf1c-3244-4c68-b149-508d50c10db8",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "41c82ce0-1767-4995-bdfd-9111f623f83c",
+              "name": "tin_nhan_dau_vao",
+              "value": "={{ $json.message.text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -448,
+        96
+      ],
+      "id": "eb9d4ad1-e21e-49d5-bdec-6d34292b75aa",
+      "name": "Edit Fields2"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5fc24b58-0122-4411-866a-593955c9e24f",
+              "name": "user_text",
+              "value": "={{ $json.content.parts[0].text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        448,
+        0
+      ],
+      "id": "084ddccb-8e7a-4a5d-a011-45879e481cfa",
+      "name": "chuan_hoa_output"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.message.voice.file_unique_id }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists",
+                      "singleValue": true
+                    },
+                    "id": "afbc5c63-ad6d-4da2-8010-abaa26cbf684"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "voice"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "91edacd0-ec0c-4b19-bf29-3488a1c6c105",
+                    "leftValue": "={{ $json.message.voice.file_unique_id }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "notExists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Text"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -224,
+        96
+      ],
+      "id": "af28cdc4-dd8a-44ee-85d3-fcff18764dd6",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5fc24b58-0122-4411-866a-593955c9e24f",
+              "name": "user_text",
+              "value": "={{ $json.tin_nhan_dau_vao }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        448,
+        192
+      ],
+      "id": "75a95545-eb58-4a8a-b84f-812b05d8ef88",
+      "name": "chuan_hoa_output1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Send a photo message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a file": {
+      "main": [
+        [
+          {
+            "node": "Analyze audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields2": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze audio": {
+      "main": [
+        [
+          {
+            "node": "chuan_hoa_output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "chuan_hoa_output": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Get a file",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "chuan_hoa_output1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "chuan_hoa_output1": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "6cce9206-0011-417a-951c-8321a6cc9eef",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "5a283049209dad99e9f26132014cb25d439b9f04d1e7a01127a2c7862a85ef44"
+  },
+  "id": "1dGkckRCYrwOugwS",
+  "tags": [
+    {
+      "createdAt": "2025-07-17T10:15:49.348Z",
+      "updatedAt": "2025-07-17T10:15:49.348Z",
+      "id": "iuZnyClhJaCuoq1g",
+      "name": "Template"
+    }
+  ]
+}

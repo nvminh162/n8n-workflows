@@ -1,0 +1,769 @@
+{
+  "name": "nvminh162 Tạo QR thanh toán kèm nội dung chuyển khoản",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message",
+          "*"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        1440,
+        784
+      ],
+      "id": "7df73761-de0a-40d9-ab5a-578e7d554652",
+      "name": "Telegram Trigger",
+      "webhookId": "9b3cdda6-840c-4e01-b781-098e608f14ff",
+      "credentials": {
+        "telegramApi": {
+          "id": "6hEggQxUSHgZgpGn",
+          "name": "Telegram account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://api.vietqr.io/image/{{ $json[\"acqId\"] }}-{{ $json[\"accountNo\"] }}-{{ $json[\"template\"] }}.png?amount={{ $json[\"amount\"] }}&addInfo={{ $json[\"addInfo\"] }}&accountName={{ $json[\"accountName\"] }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4480,
+        304
+      ],
+      "id": "3bd55090-1a79-4d6c-9ce4-e6b3e13f2eb2",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "operation": "sendPhoto",
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "binaryData": true,
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        4768,
+        304
+      ],
+      "id": "5ca4056c-41f4-48f3-b2db-f34c5ca566d3",
+      "name": "Send a photo message",
+      "webhookId": "e5e0827c-f1e4-423e-888c-824c5f6ac003",
+      "credentials": {
+        "telegramApi": {
+          "id": "6hEggQxUSHgZgpGn",
+          "name": "Telegram account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $json.message.voice.file_id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2224,
+        544
+      ],
+      "id": "06079ecb-c305-4f35-b500-a743184f3b23",
+      "name": "Get a file",
+      "webhookId": "7232a9f7-1397-400e-b4fd-7a438abe38bd",
+      "credentials": {
+        "telegramApi": {
+          "id": "6hEggQxUSHgZgpGn",
+          "name": "Telegram account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "operation": "analyze",
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "text": "Trích xuất âm thanh thành text",
+        "inputType": "binary",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        2448,
+        544
+      ],
+      "id": "2df7cfab-9195-4de1-9700-605cc1c8d910",
+      "name": "Analyze audio",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "KAgAqafPBgIQvYax",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=\n**Tin nhắn:** {{ $json.user_text }}"
+            }
+          ]
+        },
+        "jsonOutput": "={{ true }}",
+        "options": {
+          "systemMessage": "=Bạn là một trợ lý phân tích yêu cầu tạo QR chuyển khoản VietQR.\n\nNhiệm vụ:\nTrích xuất thông tin từ tin nhắn người dùng (text hoặc voice) và trả về JSON hợp lệ.\n\nJSON OUTPUT BẮT BUỘC:\n\n{\n  \"so_tien\": \"<chỉ số, không ký hiệu tiền>\",\n  \"noi_dung_chuyen_khoan\": \"<string, có thể rỗng>\",\n  \"account_no\": \"<string hoặc rỗng>\",\n  \"bank_code\": \"<mã ngân hàng VietQR hoặc rỗng>\"\n}\n\nQUY TẮC:\n- Nếu người dùng KHÔNG đề cập số tài khoản → account_no = \"\"\n- Nếu người dùng KHÔNG đề cập ngân hàng → bank_code = \"\"\n- bank_code phải là 1 trong danh sách VietQR (VCB, ACB, BIDV, MB, VPB, TCB, STB, …)\n- Nếu chỉ nói tên ngân hàng (VD: Vietcombank, ACB, Techcombank) → map sang bank_code tương ứng\n- Không suy đoán nếu không chắc chắn\n- Kết quả chỉ trả về JSON, không giải thích\n\nVÍ DỤ:\n\nInput:\n\"500k tiền điện\"\n\nOutput:\n{\n  \"so_tien\": \"500000\",\n  \"noi_dung_chuyen_khoan\": \"tiền điện\",\n  \"account_no\": \"\",\n  \"bank_code\": \"\"\n}\n\nInput:\n\"123456789 ACB 500000 tien nha\"\n\nOutput:\n{\n  \"so_tien\": \"500000\",\n  \"noi_dung_chuyen_khoan\": \"tien nha\",\n  \"account_no\": \"123456789\",\n  \"bank_code\": \"ACB\"\n}\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        3520,
+        304
+      ],
+      "id": "2c4c8ca4-7bea-43af-9ff2-9b304d4f7d1c",
+      "name": "Message a model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "KAgAqafPBgIQvYax",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b39fb1db-16f6-47ce-9545-1f092acdc1a1",
+              "name": "thong_tin_thanh_toan",
+              "value": "={{ $json.content.parts[0].text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3904,
+        304
+      ],
+      "id": "e3679d51-8046-4b6d-9df6-ad69bf75c852",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const DEFAULT_ACCOUNT = {\n  accountNo: \"9353999798\",\n  accountName: \"NGUYEN VAN MINH\",\n  acqId: \"VCB\"\n};\n\n// 1️⃣ Parse JSON từ Gemini\nlet inputRaw = $input.first().json.thong_tin_thanh_toan;\nlet input;\n\ntry {\n  input = JSON.parse(inputRaw);\n} catch (e) {\n  input = {};\n}\n\n// 2️⃣ Chuẩn hoá dữ liệu\nconst userAccountNo =\n  typeof input.account_no === \"string\" && input.account_no.trim() !== \"\"\n    ? input.account_no.trim()\n    : \"\";\n\nconst userBankCode =\n  typeof input.bank_code === \"string\" && input.bank_code.trim() !== \"\"\n    ? input.bank_code.trim().toUpperCase()\n    : \"\";\n\n// 3️⃣ Quyết định accountNo & acqId\nconst accountNo = userAccountNo !== \"\"\n  ? userAccountNo\n  : DEFAULT_ACCOUNT.accountNo;\n\nconst acqId = userBankCode !== \"\"\n  ? userBankCode\n  : DEFAULT_ACCOUNT.acqId;\n\n// 4️⃣ Quyết định accountName (ĐIỂM THEN CHỐT)\nconst accountName =\n  userAccountNo !== \"\" && userBankCode !== \"\"\n    ? \"\"               // user nhập STK + bank → KHÔNG set tên\n    : DEFAULT_ACCOUNT.accountName;\n\n// 5️⃣ Return cho VietQR\nreturn [\n  {\n    json: {\n      amount: input.so_tien || \"\",\n      addInfo: input.noi_dung_chuyen_khoan || \"\",\n      accountNo,\n      acqId,\n      accountName,\n      template: \"compact2\"\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4208,
+        304
+      ],
+      "id": "d57f0bd8-5cb6-4c33-b05a-7a932c9f4c7c",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "41c82ce0-1767-4995-bdfd-9111f623f83c",
+              "name": "tin_nhan_dau_vao",
+              "value": "={{ $json.message.text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1664,
+        784
+      ],
+      "id": "2bc7eaeb-4a6d-4372-b8dd-45f22e0c3625",
+      "name": "Edit Fields2"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5fc24b58-0122-4411-866a-593955c9e24f",
+              "name": "user_text",
+              "value": "={{ $json.content.parts[0].text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2672,
+        544
+      ],
+      "id": "3f1e6b3a-012e-4237-b5c7-c93c72296e23",
+      "name": "chuan_hoa_output"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.message.voice.file_unique_id }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists",
+                      "singleValue": true
+                    },
+                    "id": "afbc5c63-ad6d-4da2-8010-abaa26cbf684"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "voice"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "91edacd0-ec0c-4b19-bf29-3488a1c6c105",
+                    "leftValue": "={{ $json.message.voice.file_unique_id }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "notExists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Text"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        1888,
+        784
+      ],
+      "id": "b02ec5dc-52b0-4e87-abfe-c81bd1298e06",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5fc24b58-0122-4411-866a-593955c9e24f",
+              "name": "user_text",
+              "value": "={{ $json.tin_nhan_dau_vao }}",
+              "type": "string"
+            },
+            {
+              "id": "a9f78465-ae72-4381-a8dc-58b0cd489294",
+              "name": "",
+              "value": "",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2224,
+        1008
+      ],
+      "id": "8ce0c5a1-7414-4b3e-b822-0f0fc0e81a77",
+      "name": "chuan_hoa_output1"
+    },
+    {
+      "parameters": {
+        "content": "## Chatbot mode by default\n### (when no command is provided)",
+        "height": 233,
+        "width": 330.5019024637719
+      },
+      "id": "bea4a9c8-f753-4a82-a93a-46a1436e0813",
+      "name": "Sticky Note1",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        3552,
+        624
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Settings').first().json.message.from.id }}",
+        "text": "={{ JSON.parse($json.content.parts[0].text).response }}",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "946e61b3-5684-4658-addc-152cd8030303",
+      "name": "Text reply",
+      "type": "n8n-nodes-base.telegram",
+      "position": [
+        4032,
+        736
+      ],
+      "typeVersion": 1,
+      "webhookId": "05b9cbbc-501a-47f6-9540-1a6dc77a713d",
+      "credentials": {
+        "telegramApi": {
+          "id": "6hEggQxUSHgZgpGn",
+          "name": "Telegram account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.message.from.id }}",
+        "text": "=Sorry, {{ $json.message.from.first_name }} {{ $json.message.from.last_name }}! This command is not supported yet. Please type some text to a chat bot or try this command:\n\n/qr \\[your prompt]\n\nEnter the command, then space and provide your request. Example:\n\n`/qr 100k nội dung là Tiền sinh hoạt tháng 2`",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "55c73278-b5f0-4ef9-b272-fff06b623581",
+      "name": "Send error message",
+      "type": "n8n-nodes-base.telegram",
+      "position": [
+        3616,
+        1568
+      ],
+      "typeVersion": 1,
+      "webhookId": "f8ced6f4-c1a8-49f9-a111-7f5935c7c9fb",
+      "credentials": {
+        "telegramApi": {
+          "id": "6hEggQxUSHgZgpGn",
+          "name": "Telegram account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "dataType": "string",
+        "value1": "={{ $json.message?.text }}",
+        "rules": {
+          "rules": [
+            {
+              "operation": "startsWith",
+              "value2": "/qr"
+            },
+            {
+              "operation": "notStartsWith",
+              "value2": "/",
+              "output": 1
+            },
+            {
+              "operation": "startsWith",
+              "value2": "=/guide",
+              "output": 2
+            }
+          ]
+        },
+        "fallbackOutput": 3
+      },
+      "id": "16f92be6-080c-4ad8-b9aa-76adbb232f72",
+      "name": "CheckCommand1",
+      "type": "n8n-nodes-base.switch",
+      "position": [
+        2688,
+        976
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "## Error fallback for unsupported commands",
+        "height": 279,
+        "width": 316
+      },
+      "id": "7536fc32-9d58-4116-ae8b-bb12d55f6684",
+      "name": "Sticky Note5",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        3536,
+        1440
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "values": {
+          "number": [
+            {
+              "name": "model_temperature",
+              "value": 0.8
+            },
+            {
+              "name": "token_length",
+              "value": 500
+            }
+          ],
+          "string": [
+            {
+              "name": "system_command",
+              "value": "=You are a friendly chatbot & the intent classifier for the chatbot that generates QR codes for bank transfers.. User name is 'ReceiverBOT - nvminh162'. User system language is {{ $json?.message?.from?.language_code }}. First, detect user text language. Next, provide your reply in the same language. Include several suitable emojis in your answer."
+            },
+            {
+              "name": "bot_typing",
+              "value": "={{ $json?.message?.text.startsWith('/qr') ? \"upload_qr\" : \"typing\" }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b3ea8d20-1d78-45fa-a4a2-ea1f8bc0b30f",
+      "name": "Settings",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        2464,
+        1008
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "={{ $json.system_command }}",
+              "role": "model"
+            },
+            {
+              "content": "={{ $json.message.text }}"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "builtInTools": {},
+        "options": {
+          "maxOutputTokens": "={{ $json.token_length }}",
+          "temperature": "={{ $json.model_temperature }}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        3616,
+        736
+      ],
+      "id": "ae113333-e346-4a59-8077-4dffccfbe619",
+      "name": "Message a model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "KAgAqafPBgIQvYax",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Settings').first().json.message.from.id }}",
+        "text": "=📘 HƯỚNG DẪN SỬ DỤNG RECEIVERBOT\n\n🤖 Tạo QR chuyển khoản VietQR nhanh chóng.\n\n🔹 DÙNG MẶC ĐỊNH\n• 500k\n• 500k tiền điện\n• 1tr tiền nhà\n→ Dùng STK & ngân hàng MẶC ĐỊNH\n\n🔹 CHỈ ĐỊNH STK & NGÂN HÀNG\n• 123456789 ACB 500k\n• 123456789 Vietcombank 1tr tiền điện\n→ Dùng STK & ngân hàng bạn nhập\n→ KHÔNG gán tên người nhận mặc định (9353999798 + Vietcombank)\n\n🔹 LỆNH\n• /qr <nội dung>\n• /guide\n• /  (chat)\n\n⚠️ Lưu ý:\n- Có STK & ngân hàng → ưu tiên thông tin bạn nhập\n- Nội dung sẽ gắn vào QR\n\n🚀 Sẵn sàng sử dụng!\n",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "a87b2b59-fbdb-4561-92b8-5b6bab4812ad",
+      "name": "Text reply1",
+      "type": "n8n-nodes-base.telegram",
+      "position": [
+        3648,
+        1104
+      ],
+      "typeVersion": 1,
+      "webhookId": "05b9cbbc-501a-47f6-9540-1a6dc77a713d",
+      "credentials": {
+        "telegramApi": {
+          "id": "6hEggQxUSHgZgpGn",
+          "name": "Telegram account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Welcome message\n### /guide",
+        "height": 252,
+        "width": 331
+      },
+      "id": "fa217c68-fa6a-44a2-b83e-0ce139006316",
+      "name": "Sticky Note2",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        3536,
+        1024
+      ],
+      "typeVersion": 1
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Send a photo message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a file": {
+      "main": [
+        [
+          {
+            "node": "Analyze audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields2": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze audio": {
+      "main": [
+        [
+          {
+            "node": "chuan_hoa_output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "chuan_hoa_output": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Get a file",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "chuan_hoa_output1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "chuan_hoa_output1": {
+      "main": [
+        [
+          {
+            "node": "Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CheckCommand1": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Message a model1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Text reply1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send error message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Settings": {
+      "main": [
+        [
+          {
+            "node": "CheckCommand1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model1": {
+      "main": [
+        [
+          {
+            "node": "Text reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "a23a2985-48bd-4abc-9b08-2d0bff6bce9d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "be85b8cc596b2982bc47800639ee4a38c97c68bb23066090c0c47ce984e9571b"
+  },
+  "id": "QX8PKd4mUbv4ZoZzblf4H",
+  "tags": [
+    {
+      "updatedAt": "2026-01-26T01:30:10.470Z",
+      "createdAt": "2026-01-26T01:30:10.470Z",
+      "id": "PitV9rGK1OEtX0A0",
+      "name": "Template"
+    }
+  ]
+}
