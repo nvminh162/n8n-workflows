@@ -1,0 +1,1572 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5e50f413-68a0-4e76-8899-e2cbc6c28cb6",
+              "name": "summary",
+              "value": "={{ $json.event.title }}",
+              "type": "string"
+            },
+            {
+              "id": "270c5f8c-8c27-4877-af9d-dab9366dc679",
+              "name": "start",
+              "value": "={{ $json.event.start }}",
+              "type": "string"
+            },
+            {
+              "id": "23a46bc6-9190-40db-a525-0611b280e7f6",
+              "name": "end",
+              "value": "={{ $json.event.end }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -608,
+        2208
+      ],
+      "id": "d7e60e0e-e111-4b77-8b8e-371508fba655",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "mode": "id",
+          "value": "giasinguyentran@gmail.com",
+          "cachedResultName": "giasinguyentran@gmail.com"
+        },
+        "start": "={{ $json.start }}",
+        "end": "={{ $json.end }}",
+        "additionalFields": {
+          "description": "={{ $json.event.description || '' }}",
+          "location": "={{ $json.event.location || '' }}",
+          "summary": "={{ $json.summary }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        -368,
+        2208
+      ],
+      "id": "2fa5f276-3c24-45ac-b9bd-d82dd95fc2f2",
+      "name": "Create an event",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "hMHN5h8zeQCRBcil",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -3376,
+        2720
+      ],
+      "id": "841b6ee9-0bf8-456d-9c98-f8ad3d2f49f7",
+      "name": "Telegram Trigger",
+      "webhookId": "b4bd4cfc-cf6a-454e-9d25-c83a9cc8b5cc",
+      "credentials": {
+        "telegramApi": {
+          "id": "x3FhQ21a2LNM6EhK",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{\n'✅ Đã tạo lịch thành công!\\n\\n' +\n'📋 ' + ($json.summary || 'Sự kiện') +\n'\\n🕒 Bắt đầu: ' + DateTime.fromISO($json.start.dateTime).toFormat('dd/MM/yyyy HH:mm') +\n'\\n🕐 Kết thúc: ' + DateTime.fromISO($json.end.dateTime).toFormat('dd/MM/yyyy HH:mm') +\n(\n  $('Edit Fields1').item.json.event.location\n    ? '\\n📍 Địa điểm: ' + $('Edit Fields1').item.json.event.location\n    : ''\n) +\n(\n  $('Edit Fields1').item.json.event.description\n    ? '\\n📝 Mô tả: ' + $('Edit Fields1').item.json.event.description\n    : ''\n) +\n'\\n\\n🔗 ' + $json.htmlLink\n}}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -112,
+        2208
+      ],
+      "id": "79349d58-69ca-455c-8094-242258bf0141",
+      "name": "Send a text message",
+      "webhookId": "6ec4e951-070f-4b4d-962e-d576909de5bf",
+      "credentials": {
+        "telegramApi": {
+          "id": "x3FhQ21a2LNM6EhK",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "id": "94e4a0c6-0ac4-4b84-a735-8ac858a0da40",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -1904,
+        2432
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "t2Hmpeopws3ZimS8",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"need_clarification\": false,\n  \"question\": \"\",\n  \"title\": \"Demo với giáo viên\",\n  \"start\": \"2025-01-17T14:00:00+07:00\",\n  \"end\": \"2025-01-17T15:00:00+07:00\",\n  \"location\": \"Phòng họp A\",\n  \"description\": \"Trình bày dự án chatbot AI\"\n}"
+      },
+      "id": "04123700-f97f-41b4-99b3-b6a050ad3087",
+      "name": "JSON Output Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        -1776,
+        2432
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "id-1",
+              "leftValue": "={{ $json.needsClarification }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "aa57bab5-9d94-4f7e-aebd-af545daab320",
+      "name": "Check If Needs Clarification",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -1328,
+        2304
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id.toString() }}",
+        "text": "={{ $json.formattedMessage || '❓ Vui lòng cung cấp thêm thông tin để tôi có thể tạo lịch chính xác hơn.' }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "4a9bcae0-e451-4a3a-99ea-7e563b07df4a",
+      "name": "Ask for Clarification",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -656,
+        2480
+      ],
+      "webhookId": "cb4dccc2-ac0a-47db-9f72-9ef30a399ebb",
+      "credentials": {
+        "telegramApi": {
+          "id": "x3FhQ21a2LNM6EhK",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "id-1",
+              "name": "event",
+              "value": "={{ $json.output }}",
+              "type": "object"
+            },
+            {
+              "id": "id-2",
+              "name": "needsClarification",
+              "value": "={{ Boolean($json.output.need_clarification) }}",
+              "type": "boolean"
+            },
+            {
+              "id": "id-3",
+              "name": "clarificationQuestion",
+              "value": "={{ $json.output.question || '' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "534a7e7f-0af3-4189-b8c1-e17dcea83601",
+      "name": "Parse AI Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1552,
+        2304
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.combined_text || $('Telegram Trigger').item.json.message.text }}",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=Bạn là trợ lý AI thông minh giúp phân tích tin nhắn để tạo lịch Google Calendar.\n\nNgày giờ hiện tại: {{ $now.toISO() }}\nMúi giờ: Asia/Ho_Chi_Minh (UTC+7)\n\nNhiệm vụ của bạn:\n1. Phân tích tin nhắn người dùng để trích xuất thông tin sự kiện\n2. Xác định xem có cần làm rõ thêm thông tin không\n3. Trả về JSON với cấu trúc chính xác\n\nQuy tắc xử lý thời gian:\n- Nếu chỉ có ngày không có giờ: mặc định 9:00 sáng, thời lượng 1 giờ\n- Nếu có giờ bắt đầu nhưng không có giờ kết thúc: mặc định thời lượng 1 giờ\n- Định dạng thời gian: ISO 8601 với múi giờ +07:00\n- Nếu người dùng nói \"ngày mai\", \"tuần sau\", hãy tính toán dựa trên ngày hiện tại\n- Luôn đảm bảo end > start\n- Nếu start là 23:00, end phải là 00:00 ngày hôm sau\n\nKhi cần làm rõ (need_clarification = true):\n- Thiếu thông tin quan trọng (tiêu đề hoặc thời gian)\n- Thời gian không rõ ràng hoặc mơ hồ\n- Đặt question với câu hỏi cụ thể bằng tiếng Việt\n\nKhi đủ thông tin (need_clarification = false):\n- Điền đầy đủ: title, start, end (bắt buộc)\n- location, description (tùy chọn, để rỗng nếu không có)\n- Để question rỗng\n\nVí dụ tin nhắn: \"Họp với khách hàng ngày mai 2pm\"\nTrả về:\n{\n  \"need_clarification\": false,\n  \"question\": \"\",\n  \"title\": \"Họp với khách hàng\",\n  \"start\": \"2025-01-18T14:00:00+07:00\",\n  \"end\": \"2025-01-18T15:00:00+07:00\",\n  \"location\": \"\",\n  \"description\": \"\"\n}"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "id": "020ce7b0-f93f-4f36-8048-5bff791d27ed",
+      "name": "Message a Model - Calendar Parser",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        -1904,
+        2208
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "id-1",
+              "name": "event",
+              "value": "={{ $('Parse AI Response').item.json.event }}",
+              "type": "object"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {
+          "ignoreConversionErrors": true
+        }
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -880,
+        2208
+      ],
+      "id": "8613b20e-482b-4da4-b50f-8f4efa2a57ba",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const clarificationQuestion = $input.item.json.clarificationQuestion || '';\nif (!clarificationQuestion || clarificationQuestion.trim() === '') {\n  return { json: { formattedMessage: '❓ Vui lòng cung cấp thêm thông tin để tôi có thể tạo lịch chính xác hơn.' } };\n}\nconst formattedMessage = '❓ ' + clarificationQuestion;\nreturn { json: { formattedMessage: formattedMessage } };"
+      },
+      "id": "3456bc17-08e8-41da-bf8c-b99f0f881cf9",
+      "name": "Format Clarification Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1104,
+        2480
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "propertyName": "pending_context",
+        "key": "={{ String($('Telegram Trigger').item.json.message.chat.id) }}",
+        "options": {}
+      },
+      "id": "63c15b51-a71b-4301-91fc-bc3708ffcce2",
+      "name": "Data Store: Get Pending",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        -2576,
+        2304
+      ],
+      "credentials": {
+        "redis": {
+          "id": "vYS5L1jf7hkW7i2g",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "id-1",
+              "leftValue": "={{ $json.pending_context }}",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "3e664fbc-683a-46a5-bc25-ec900b2920f7",
+      "name": "IF Has Pending",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -2352,
+        2304
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "id-1",
+              "name": "combined_text",
+              "value": "={{ $json.pending_context ? JSON.parse($json.pending_context).original_message + '\\n\\nCâu hỏi trước: ' + JSON.parse($json.pending_context).question + '\\n\\nCâu trả lời: ' + $('Telegram Trigger').item.json.message.text : $('Telegram Trigger').item.json.message.text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "0a8a17e9-34bb-4864-b730-314f63336940",
+      "name": "Set Combined Text",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -2128,
+        2384
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "set",
+        "key": "={{ String($('Telegram Trigger').item.json.message.chat.id) }}",
+        "value": "={{ JSON.stringify({ original_message: $('Telegram Trigger').item.json.message.text, question: $json.clarificationQuestion, timestamp: $now.toISO() }) }}"
+      },
+      "id": "8c8faea0-4a9e-41d8-ab6d-35c24357d8ed",
+      "name": "Data Store: Set Pending",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        -880,
+        2480
+      ],
+      "credentials": {
+        "redis": {
+          "id": "vYS5L1jf7hkW7i2g",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "key": "={{ String($('Telegram Trigger').item.json.message.chat.id) }}"
+      },
+      "id": "91631dff-1c42-4fb0-b892-bc35d2b7a94a",
+      "name": "Data Store: Delete Pending",
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        -1104,
+        2208
+      ],
+      "credentials": {
+        "redis": {
+          "id": "vYS5L1jf7hkW7i2g",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "calendarId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "giasinguyentran@gmail.com"
+        },
+        "triggerOn": "eventCreated",
+        "options": {}
+      },
+      "id": "acca8be5-9063-4e79-a379-01c44bb465cc",
+      "name": "Google Calendar Trigger - Event Created/Updated",
+      "type": "n8n-nodes-base.googleCalendarTrigger",
+      "typeVersion": 1,
+      "position": [
+        -3376,
+        3232
+      ],
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "hMHN5h8zeQCRBcil",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "subtractFromDate",
+        "magnitude": "={{ $json.start.dateTime }}",
+        "timeUnit": "minutes",
+        "duration": 30,
+        "outputFieldName": "reminder30MinBefore",
+        "options": {}
+      },
+      "id": "7377cf1c-5531-4d32-806a-e7c7a3805a8f",
+      "name": "Calculate Reminder Times",
+      "type": "n8n-nodes-base.dateTime",
+      "typeVersion": 2,
+      "position": [
+        -3152,
+        3232
+      ]
+    },
+    {
+      "parameters": {
+        "resume": "specificTime",
+        "dateTime": "={{ $json.reminder30MinBefore }}"
+      },
+      "id": "378cadca-ec78-4fa2-a828-c96af29fc7a1",
+      "name": "Wait Until 30 Min Before",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -2928,
+        3232
+      ],
+      "webhookId": "c9439f2a-9ecc-406f-bc14-4fbf9988a9e2"
+    },
+    {
+      "parameters": {
+        "chatId": "7869351742",
+        "text": "={{ '⏰ Nhắc nhở: Sự kiện sắp diễn ra trong 30 phút!\\n\\n📋 ' + $('Google Calendar Trigger - Event Created/Updated').item.json.summary + '\\n🕒 Thời gian: ' + DateTime.fromISO($('Google Calendar Trigger - Event Created/Updated').item.json.start.dateTime).toFormat('dd/MM/yyyy HH:mm') + ($('Google Calendar Trigger - Event Created/Updated').item.json.location ? '\\n📍 Địa điểm: ' + $('Google Calendar Trigger - Event Created/Updated').item.json.location : '') }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "6f87141a-1b00-4188-a273-46acde832d3f",
+      "name": "Send 30-Min Reminder",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -2704,
+        3232
+      ],
+      "webhookId": "9ad367cc-c8b3-4266-8fd3-b77d5cf31b93",
+      "credentials": {
+        "telegramApi": {
+          "id": "x3FhQ21a2LNM6EhK",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 7
+            }
+          ]
+        }
+      },
+      "id": "71097b8b-ad51-4ecc-9627-2ff1dd77e5c6",
+      "name": "Schedule Trigger - Morning Reminders",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -3376,
+        3456
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "mode": "id",
+          "value": "giasinguyentran@gmail.com"
+        },
+        "timeMin": "={{ $now.startOf('day').toISO() }}",
+        "timeMax": "={{ $now.endOf('day').toISO() }}",
+        "options": {}
+      },
+      "id": "92aa7940-6764-4b42-83e1-49f0f3c1fae1",
+      "name": "Get Today's Events",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        -3152,
+        3456
+      ],
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "hMHN5h8zeQCRBcil",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "id-1",
+              "leftValue": "={{ $json.start.dateTime }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "69a66779-78b1-4fae-ab33-96e675dae10e",
+      "name": "Filter Events Today",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        -2928,
+        3456
+      ]
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "events",
+        "options": {}
+      },
+      "id": "64c01b69-4e88-425b-8272-532f71259ab2",
+      "name": "Aggregate Events for Morning Message",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        -2704,
+        3456
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "id-1",
+              "name": "morningMessage",
+              "value": "=🌅 Chào buổi sáng! Lịch trình hôm nay của bạn:\n\n{{ Array.isArray($json.events) && $json.events.length > 0 ? $json.events.map((e, i) => (i+1) + '. ' + e.summary + '\\n   🕒 ' + DateTime.fromISO(e.start.dateTime).toFormat('HH:mm') + (e.location ? '\\n   📍 ' + e.location : '')).join('\\n\\n') : 'Không có sự kiện nào' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "aabcc4fa-138d-4ddd-a9ab-777642a36d30",
+      "name": "Format Morning Reminder",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -2480,
+        3456
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "7869351742",
+        "text": "={{ $json.morningMessage }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "cb060bbe-30a8-4a1f-b61a-81f01812505f",
+      "name": "Send Morning Reminder",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -2256,
+        3456
+      ],
+      "webhookId": "d179d28d-2a18-4ee4-8649-7591b1689a9b",
+      "credentials": {
+        "telegramApi": {
+          "id": "x3FhQ21a2LNM6EhK",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n\t\"intent\": \"CREATE\",\n\t\"eventTitle\": \"\",\n\t\"eventTime\": \"\",\n\t\"newTime\": \"\",\n\t\"query\": \"\",\n\t\"isToday\": false\n}"
+      },
+      "id": "9994b6bc-776d-4ab3-966c-43ce5556a05f",
+      "name": "Structured Output Parser - Intent",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        -3152,
+        2944
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Telegram Trigger').item.json.message.text }}",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=Bạn là trợ lý phân tích ý định người dùng cho lịch Google Calendar.\n\nNgày giờ hiện tại: {{ $now.toISO() }}\nMúi giờ: Asia/Ho_Chi_Minh (UTC+7)\n\nNhiệm vụ: Phân tích tin nhắn tiếng Việt và xác định ý định chính xác.\n\n## Các loại ý định:\n\n### 1. QUERY_TODAY - Xem lịch hôm nay (ƯU TIÊN CAO)\nTừ khóa: \"hôm nay\", \"today\", \"ngày hôm nay\", \"lịch hôm nay\", \"việc hôm nay\", \"hôm nay có gì\", \"có gì hôm nay\"\nVí dụ:\n- \"lịch hôm nay\"\n- \"hôm nay có việc gì\"\n- \"xem lịch hôm nay\"\n- \"việc hôm nay\"\n\n### 2. QUERY - Xem lịch trong khoảng thời gian (ƯU TIÊN CAO)\nTừ khóa: \"tuần\", \"tháng\", \"week\", \"month\", \"tuần này\", \"tháng này\", \"tuần sau\", \"tháng sau\", \"lịch tuần\", \"việc tuần\"\nVí dụ:\n- \"lịch tuần này\" → query: \"this_week\"\n- \"việc tuần này\" → query: \"this_week\"\n- \"tuần này\" → query: \"this_week\"\n- \"lịch tháng này\" → query: \"this_month\"\n- \"lịch tuần sau\" → query: \"next_week\"\n- \"lịch tháng sau\" → query: \"next_month\"\n\n### 3. UPDATE - Cập nhật/dời lịch\nTừ khóa: \"dời\", \"đổi\", \"thay đổi\", \"chuyển\", \"update\", \"reschedule\"\nVí dụ:\n- \"dời cuộc họp sang mai 3h\"\n- \"đổi lịch 2h thành 4h\"\n- \"chuyển sự kiện sang thứ 6\"\n\n### 4. DELETE - Xóa/hủy lịch\nTừ khóa: \"hủy\", \"xóa\", \"xoá\", \"cancel\", \"delete\"\nVí dụ:\n- \"hủy lịch 3h chiều\"\n- \"xóa cuộc họp với khách hàng\"\n- \"hủy sự kiện ngày mai\"\n\n### 5. CREATE - Tạo sự kiện mới (MẶC ĐỊNH)\nTừ khóa: \"tạo\", \"thêm\", \"đặt lịch\", \"create\", \"add\", \"lịch họp\", \"cuộc họp\"\nVí dụ:\n- \"tạo lịch họp ngày mai 2h\"\n- \"thêm sự kiện demo vào thứ 6\"\n- \"đặt lịch gặp khách hàng\"\n- \"họp với team lúc 3h chiều\"\n\n## Quy tắc ưu tiên (QUAN TRỌNG - TUÂN THỦ NGHIÊM NGẶT):\n1. **ƯU TIÊN 1**: Nếu có \"hôm nay\" hoặc \"today\" → QUERY_TODAY (isToday: true, query: \"\")\n2. **ƯU TIÊN 2**: Nếu có \"tuần này\" hoặc \"this week\" → QUERY (query: \"this_week\", isToday: false)\n3. **ƯU TIÊN 3**: Nếu có \"tuần sau\" hoặc \"next week\" → QUERY (query: \"next_week\", isToday: false)\n4. **ƯU TIÊN 4**: Nếu có \"tháng này\" hoặc \"this month\" → QUERY (query: \"this_month\", isToday: false)\n5. **ƯU TIÊN 5**: Nếu có \"tháng sau\" hoặc \"next month\" → QUERY (query: \"next_month\", isToday: false)\n6. Nếu có \"dời\", \"đổi\", \"thay đổi\", \"chuyển\" → UPDATE\n7. Nếu có \"hủy\", \"xóa\", \"xoá\" → DELETE\n8. Nếu không có từ khóa nào ở trên → CREATE (mặc định)\n\n## Định dạng trả về:\nTrả về ĐÚNG MỘT JSON object với cấu trúc sau:\n{\n  \"intent\": \"CREATE|QUERY_TODAY|QUERY|UPDATE|DELETE\",\n  \"eventTitle\": \"Tên sự kiện (cho CREATE/UPDATE/DELETE, để rỗng nếu QUERY)\",\n  \"eventTime\": \"Thời gian hiện tại của sự kiện ISO format (cho UPDATE/DELETE, để rỗng nếu không)\",\n  \"newTime\": \"Thời gian mới ISO format (chỉ cho UPDATE, để rỗng nếu không)\",\n  \"query\": \"this_week|this_month|next_week|next_month (chỉ cho QUERY, để rỗng nếu QUERY_TODAY hoặc không phải QUERY)\",\n  \"isToday\": true nếu QUERY_TODAY, false nếu không\n}\n\n**LƯU Ý QUAN TRỌNG:** \n- KHÔNG bao gồm trường \"eventId\" trong output\n- KHÔNG tạo ra nhiều JSON objects\n- CHỈ trả về MỘT JSON object duy nhất\n- Khi intent là QUERY_TODAY: isToday = true, query = \"\"\n- Khi intent là QUERY: isToday = false, query = \"this_week\"|\"next_week\"|\"this_month\"|\"next_month\"\n- Khi intent là CREATE/UPDATE/DELETE: isToday = false, query = \"\"\n\n## Ví dụ cụ thể:\n\nTin nhắn: \"lịch hôm nay\"\nTrả về:\n{\n  \"intent\": \"QUERY_TODAY\",\n  \"eventTitle\": \"\",\n  \"eventTime\": \"\",\n  \"newTime\": \"\",\n  \"query\": \"\",\n  \"isToday\": true\n}\n\nTin nhắn: \"lịch tuần này\"\nTrả về:\n{\n  \"intent\": \"QUERY\",\n  \"eventTitle\": \"\",\n  \"eventTime\": \"\",\n  \"newTime\": \"\",\n  \"query\": \"this_week\",\n  \"isToday\": false\n}\n\nTin nhắn: \"việc tuần này\"\nTrả về:\n{\n  \"intent\": \"QUERY\",\n  \"eventTitle\": \"\",\n  \"eventTime\": \"\",\n  \"newTime\": \"\",\n  \"query\": \"this_week\",\n  \"isToday\": false\n}\n\nTin nhắn: \"tuần này\"\nTrả về:\n{\n  \"intent\": \"QUERY\",\n  \"eventTitle\": \"\",\n  \"eventTime\": \"\",\n  \"newTime\": \"\",\n  \"query\": \"this_week\",\n  \"isToday\": false\n}\n\nTin nhắn: \"học bài 11h tối\"\nTrả về:\n{\n  \"intent\": \"CREATE\",\n  \"eventTitle\": \"học bài\",\n  \"eventTime\": \"\",\n  \"newTime\": \"\",\n  \"query\": \"\",\n  \"isToday\": false\n}\n\nLưu ý: Luôn trả về JSON hợp lệ với tất cả các trường bắt buộc. KHÔNG bao gồm eventId trong output. CHỈ trả về MỘT JSON object duy nhất."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "id": "e4fd9645-535e-445c-b0d4-2df25217c8d0",
+      "name": "Detect Intent",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        -3152,
+        2720
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.output.intent }}",
+                    "rightValue": "CREATE",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "13e4f2bf-1160-45ea-9f9f-588ba07659e1"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "CREATE"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.output.intent }}",
+                    "rightValue": "UPDATE",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "841ff238-7bcd-4df7-a2d5-e06e0ad4fcbb"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "UPDATE"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.output.intent }}",
+                    "rightValue": "DELETE",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "27f78792-0ec7-4319-ae84-78869d19026b"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "DELETE"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.output.intent }}",
+                    "rightValue": "QUERY",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "5b626a33-01eb-4fd2-b904-47e93db113b4"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "QUERY"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.output.intent }}",
+                    "rightValue": "QUERY_TODAY",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "a54709c2-e881-4e99-85e3-161ff4995513"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "QUERY_TODAY"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c5b8fa77-4271-4244-9997-c8329a9d79c8",
+      "name": "Route by Intent",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -2800,
+        2672
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "calendar": {
+          "__rl": true,
+          "mode": "id",
+          "value": "giasinguyentran@gmail.com"
+        },
+        "eventId": "={{ $json.id }}",
+        "options": {}
+      },
+      "id": "38da5d36-0ae0-4488-b645-d9f40164b11e",
+      "name": "Delete Event",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        -2128,
+        2816
+      ],
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "hMHN5h8zeQCRBcil",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "mode": "id",
+          "value": "giasinguyentran@gmail.com"
+        },
+        "limit": 100,
+        "timeMin": "={{ $('Detect Intent').item.json.output.isToday ? $now.startOf('day').toISO() : ($('Detect Intent').item.json.output.query === 'this_week' ? $now.startOf('week').toISO() : ($('Detect Intent').item.json.output.query === 'next_week' ? $now.plus({weeks: 1}).startOf('week').toISO() : ($('Detect Intent').item.json.output.query === 'this_month' ? $now.startOf('month').toISO() : ($('Detect Intent').item.json.output.query === 'next_month' ? $now.plus({months: 1}).startOf('month').toISO() : $now.startOf('day').toISO())))) }}",
+        "timeMax": "={{ $('Detect Intent').item.json.output.isToday ? $now.endOf('day').toISO() : ($('Detect Intent').item.json.output.query === 'this_week' ? $now.endOf('week').toISO() : ($('Detect Intent').item.json.output.query === 'next_week' ? $now.plus({weeks: 1}).endOf('week').toISO() : ($('Detect Intent').item.json.output.query === 'this_month' ? $now.endOf('month').toISO() : ($('Detect Intent').item.json.output.query === 'next_month' ? $now.plus({months: 1}).endOf('month').toISO() : $now.endOf('day').toISO())))) }}",
+        "options": {}
+      },
+      "id": "97452711-769a-4d4b-9cd7-1cb44b2855b3",
+      "name": "Query Events",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        -2576,
+        3008
+      ],
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "hMHN5h8zeQCRBcil",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "id-1",
+              "name": "queryResponse",
+              "value": "={{\n(() => {\n  const intent = $('Detect Intent').item.json.output;\n  const title =\n    intent.isToday ? 'Lịch hôm nay' :\n    intent.query === 'thisweek' ? 'Lịch tuần này' :\n    intent.query === 'nextweek' ? 'Lịch tuần sau' :\n    intent.query === 'thismonth' ? 'Lịch tháng này' :\n    intent.query === 'nextmonth' ? 'Lịch tháng sau' :\n    'Lịch của bạn';\n\n  const events = $input.all();\n  let message = '📅 ' + title + ':\\n\\n';\n\n  if (!events || events.length === 0) {\n    message += 'Không có sự kiện nào';\n  } else {\n    events.forEach((item, i) => {\n      message += (i+1) + '. ' + item.json.summary + '\\n   🕒 ';\n\n      if (item.json.start?.dateTime) {\n        message += DateTime.fromISO(item.json.start.dateTime).toFormat('dd/MM/yyyy HH:mm');\n      } else {\n        message += DateTime.fromISO(item.json.start.date).toFormat('dd/MM/yyyy');\n      }\n\n      if (item.json.location) {\n        message += '\\n   📍 ' + item.json.location;\n      }\n\n      if (i < events.length - 1) {\n        message += '\\n\\n';\n      }\n    });\n  }\n\n  return message;\n})()\n}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "0249ec45-68b6-41b3-992e-2eb96a77efc6",
+      "name": "Format Query Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1408,
+        1776
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').first().json.message.chat.id }}\n",
+        "text": "={{ $json.queryResponse }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "d58d7023-aae8-4f46-a043-db9628be96ce",
+      "name": "Send Query Response",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -2128,
+        3008
+      ],
+      "webhookId": "adf2e8fe-8084-41b1-b169-331530e0fdc4",
+      "credentials": {
+        "telegramApi": {
+          "id": "x3FhQ21a2LNM6EhK",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').first().json.message.chat.id }}\n",
+        "text": "={{ $('Find Matching Event for Delete').item.json.error === 'not_found' ? '❌ Không tìm thấy sự kiện phù hợp để xóa.' : ('✅ Đã xóa lịch thành công!\\n\\n📋 ' + $('Find Matching Event for Delete').item.json.summary) }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "8818b2e6-22d1-4798-a893-d62e47e90a50",
+      "name": "Send Delete Confirmation",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -1840,
+        2816
+      ],
+      "webhookId": "b568326d-ff6f-4d24-8e60-7ecddd3ef087",
+      "credentials": {
+        "telegramApi": {
+          "id": "x3FhQ21a2LNM6EhK",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').first().json.message.chat.id }}",
+        "text": "={{ $('Find Matching Event for Update').item.json.error === 'not_found' ? '❌ Không tìm thấy sự kiện phù hợp để cập nhật.' : ('✅ Đã cập nhật lịch thành công!\\n\\n📋 ' + $('Find Matching Event for Update').item.json.summary + '\\n🕒 Thời gian mới: ' + DateTime.fromISO($('Update Event').item.json.start.dateTime).toFormat('dd/MM/yyyy HH:mm')) }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "c9b6866e-e040-492d-944a-35bd25a6a7f0",
+      "name": "Send Update Confirmation",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -1840,
+        2624
+      ],
+      "webhookId": "10d8aa4b-d737-4dc9-886a-6fe726a1b6f9",
+      "credentials": {
+        "telegramApi": {
+          "id": "x3FhQ21a2LNM6EhK",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "id": "dedbb328-c99b-4289-b031-97d68d89b52a",
+      "name": "OpenAI Chat Model - Intent",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -3024,
+        2944
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "t2Hmpeopws3ZimS8",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "mode": "id",
+          "value": "giasinguyentran@gmail.com"
+        },
+        "timeMin": "={{ DateTime.fromISO($('Detect Intent').item.json.output.eventTime).minus({ days: 1 }).startOf('day').toISO() }}",
+        "timeMax": "={{ DateTime.fromISO($('Detect Intent').item.json.output.eventTime).plus({ days: 1 }).endOf('day').toISO() }}",
+        "options": {}
+      },
+      "id": "bfe3da11-e704-446d-bc1e-81cf7843beff",
+      "name": "Search Events for Update",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        -2576,
+        2624
+      ],
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "hMHN5h8zeQCRBcil",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "mode": "id",
+          "value": "giasinguyentran@gmail.com"
+        },
+        "timeMin": "={{ DateTime.fromISO($('Detect Intent').item.json.output.eventTime).minus({ days: 1 }).startOf('day').toISO() }}",
+        "timeMax": "={{ DateTime.fromISO($('Detect Intent').item.json.output.eventTime).plus({ days: 1 }).endOf('day').toISO() }}",
+        "options": {}
+      },
+      "id": "e1ff75fa-a08d-4ee0-a1c2-ebb3571590b7",
+      "name": "Search Events for Delete",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        -2576,
+        2816
+      ],
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "hMHN5h8zeQCRBcil",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const intent = $('Detect Intent').first().json.output;\n\n// ===== VALIDATE INPUT =====\nif (!intent) {\n  return [{\n    json: {\n      error: 'missing_intent',\n      message: 'Intent data is missing from Detect Intent node'\n    }\n  }];\n}\n\nif (!intent.eventTime || intent.eventTime === '') {\n  return [{\n    json: {\n      error: 'missing_event_time',\n      message: 'Event time is required for update operation',\n      intent\n    }\n  }];\n}\n\nif (!intent.eventTitle || intent.eventTitle === '') {\n  return [{\n    json: {\n      error: 'missing_event_title',\n      message: 'Event title is required for update operation',\n      intent\n    }\n  }];\n}\n\nconst targetTime = new Date(intent.eventTime);\n\nif (isNaN(targetTime.getTime())) {\n  return [{\n    json: {\n      error: 'invalid_target_time_format',\n      message: 'Could not parse event time as valid date',\n      rawTime: intent.eventTime,\n      intent\n    }\n  }];\n}\n\nconst targetTitle = (intent.eventTitle || '').toLowerCase();\nconst events = $input.all();\n\nif (!events || events.length === 0) {\n  return [{\n    json: {\n      error: 'no_events_to_search',\n      message: 'No events found in the search results',\n      targetTitle,\n      targetTime: targetTime.toISOString(),\n      intent\n    }\n  }];\n}\n\n// ===== FILTER =====\nconst matches = events.filter(item => {\n  const eventTitle = (item.json.summary || '').toLowerCase();\n\n  const rawStart = item.json.start?.dateTime || item.json.start?.date;\n  if (!rawStart) return false;\n\n  const eventStart = new Date(rawStart);\n  if (isNaN(eventStart.getTime())) return false;\n\n  const timeDiff = Math.abs(eventStart.getTime() - targetTime.getTime()) / (1000 * 60 * 60); // hours\n\n  return (\n    (\n      eventTitle.includes(targetTitle) ||\n      targetTitle.includes(eventTitle.split(' ')[0])\n    )\n    &&\n    timeDiff < 24\n  );\n});\n\n// ===== NO MATCH =====\nif (matches.length === 0) {\n  return [{\n    json: {\n      error: 'not_found',\n      message: 'No matching event found',\n      targetTitle,\n      targetTime: targetTime.toISOString(),\n      intent\n    }\n  }];\n}\n\n// ===== BEST MATCH =====\nconst bestMatch = matches.reduce((best, current) => {\n  const bestTime = new Date(best.json.start?.dateTime || best.json.start?.date);\n  const currentTime = new Date(current.json.start?.dateTime || current.json.start?.date);\n\n  const bestDiff = Math.abs(bestTime - targetTime);\n  const currentDiff = Math.abs(currentTime - targetTime);\n\n  return currentDiff < bestDiff ? current : best;\n});\n\n// ===== RETURN =====\nreturn [{\n  json: {\n    ...bestMatch.json,\n    output: intent\n  }\n}];"
+      },
+      "id": "ab9b12a9-ea7d-4f11-bac9-a0e82495e462",
+      "name": "Find Matching Event for Update",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2352,
+        2624
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const targetTitle = $('Detect Intent').item.json.output.eventTitle.toLowerCase();\nconst targetTime = new Date($('Detect Intent').item.json.output.eventTime);\nconst events = $input.all();\n\nconst matches = events.filter(item => {\n  const eventTitle = (item.json.summary || '').toLowerCase();\n  const eventStart = new Date(item.json.start.dateTime || item.json.start.date);\n  const timeDiff = Math.abs(eventStart - targetTime) / (1000 * 60 * 60);\n  return eventTitle.includes(targetTitle) || targetTitle.includes(eventTitle.split(' ')[0]) && timeDiff < 24;\n});\n\nif (matches.length === 0) {\n  return { json: { error: 'not_found', eventTitle: targetTitle } };\n}\n\nconst bestMatch = matches.reduce((best, current) => {\n  const bestTime = new Date(best.json.start.dateTime || best.json.start.date);\n  const currentTime = new Date(current.json.start.dateTime || current.json.start.date);\n  const bestDiff = Math.abs(bestTime - targetTime);\n  const currentDiff = Math.abs(currentTime - targetTime);\n  return currentDiff < bestDiff ? current : best;\n});\n\nreturn { json: { ...bestMatch.json, foundEvent: bestMatch.json.summary } };"
+      },
+      "id": "bdcb82e9-cef5-4a46-8741-719f6af6426b",
+      "name": "Find Matching Event for Delete",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2352,
+        2816
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "calendar": {
+          "__rl": true,
+          "mode": "id",
+          "value": "giasinguyentran@gmail.com"
+        },
+        "eventId": "={{ $json.id }}",
+        "updateFields": {
+          "end": "={{ (() => { const newStart = DateTime.fromISO($('Detect Intent').first().json.output.newTime); const oldStart = DateTime.fromISO($json.start.dateTime); const oldEnd = DateTime.fromISO($json.end.dateTime); const duration = oldEnd.diff(oldStart, 'minutes').minutes; return newStart.plus({ minutes: duration }).toISO(); })() }}",
+          "start": "={{ DateTime.fromISO($('Detect Intent').first().json.output.newTime).toISO() }}"
+        }
+      },
+      "id": "a2907196-ebdf-47d3-8d12-aa059ac97c79",
+      "name": "Update Event",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        -2128,
+        2624
+      ],
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "hMHN5h8zeQCRBcil",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const events = $input.all();   // tất cả events\nconst intent = $('Detect Intent').first().json.output;\n\nconst title =\n  intent.isToday ? 'Lịch hôm nay' :\n  intent.query === 'thisweek' ? 'Lịch tuần này' :\n  intent.query === 'nextweek' ? 'Lịch tuần sau' :\n  intent.query === 'thismonth' ? 'Lịch tháng này' :\n  intent.query === 'nextmonth' ? 'Lịch tháng sau' :\n  'Lịch của bạn';\n\nlet message = '📅 ' + title + ':\\n\\n';\n\nif (!events || events.length === 0) {\n  message += 'Không có sự kiện nào';\n} else {\n  events.forEach((item, i) => {\n    message += `${i+1}. ${item.json.summary}\\n   🕒 `;\n\n    if (item.json.start?.dateTime) {\n      message += DateTime.fromISO(item.json.start.dateTime).toFormat('dd/MM/yyyy HH:mm');\n    } else {\n      message += DateTime.fromISO(item.json.start?.date).toFormat('dd/MM/yyyy');\n    }\n\n    if (item.json.location) {\n      message += `\\n   📍 ${item.json.location}`;\n    }\n\n    if (i < events.length - 1) {\n      message += '\\n\\n';\n    }\n  });\n}\n\n/* QUAN TRỌNG: chỉ return 1 item */\nreturn [\n  {\n    json: {\n      queryResponse: message\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2368,
+        3008
+      ],
+      "id": "7a710bcd-fa68-45d7-887c-87c315766d59",
+      "name": "Code in JavaScript"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Create an event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create an event": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Detect Intent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Message a Model - Calendar Parser",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "JSON Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Message a Model - Calendar Parser",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check If Needs Clarification": {
+      "main": [
+        [
+          {
+            "node": "Format Clarification Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Data Store: Delete Pending",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse AI Response": {
+      "main": [
+        [
+          {
+            "node": "Check If Needs Clarification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a Model - Calendar Parser": {
+      "main": [
+        [
+          {
+            "node": "Parse AI Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Clarification Message": {
+      "main": [
+        [
+          {
+            "node": "Data Store: Set Pending",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Data Store: Get Pending": {
+      "main": [
+        [
+          {
+            "node": "IF Has Pending",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Has Pending": {
+      "main": [
+        [
+          {
+            "node": "Set Combined Text",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Message a Model - Calendar Parser",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Combined Text": {
+      "main": [
+        [
+          {
+            "node": "Message a Model - Calendar Parser",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Data Store: Set Pending": {
+      "main": [
+        [
+          {
+            "node": "Ask for Clarification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Data Store: Delete Pending": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Calendar Trigger - Event Created/Updated": {
+      "main": [
+        [
+          {
+            "node": "Calculate Reminder Times",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate Reminder Times": {
+      "main": [
+        [
+          {
+            "node": "Wait Until 30 Min Before",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait Until 30 Min Before": {
+      "main": [
+        [
+          {
+            "node": "Send 30-Min Reminder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger - Morning Reminders": {
+      "main": [
+        [
+          {
+            "node": "Get Today's Events",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Today's Events": {
+      "main": [
+        [
+          {
+            "node": "Filter Events Today",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Events Today": {
+      "main": [
+        [
+          {
+            "node": "Aggregate Events for Morning Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate Events for Morning Message": {
+      "main": [
+        [
+          {
+            "node": "Format Morning Reminder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Morning Reminder": {
+      "main": [
+        [
+          {
+            "node": "Send Morning Reminder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser - Intent": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Detect Intent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Detect Intent": {
+      "main": [
+        [
+          {
+            "node": "Route by Intent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by Intent": {
+      "main": [
+        [
+          {
+            "node": "Data Store: Get Pending",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Search Events for Update",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Search Events for Delete",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Query Events",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete Event": {
+      "main": [
+        [
+          {
+            "node": "Send Delete Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Query Events": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Query Response": {
+      "main": [
+        []
+      ]
+    },
+    "OpenAI Chat Model - Intent": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Detect Intent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Events for Update": {
+      "main": [
+        [
+          {
+            "node": "Find Matching Event for Update",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Events for Delete": {
+      "main": [
+        [
+          {
+            "node": "Find Matching Event for Delete",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Matching Event for Update": {
+      "main": [
+        [
+          {
+            "node": "Update Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Matching Event for Delete": {
+      "main": [
+        [
+          {
+            "node": "Delete Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Event": {
+      "main": [
+        [
+          {
+            "node": "Send Update Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Send Query Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "d950a089-3662-46ef-8765-2e6c832b1ec7",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "6302c7b0efda2894f53cabed9c78ea0799a03e65e551dad17d96391ed54620d6"
+  },
+  "id": "b3ebsUT1NQFEV2dMXYj11",
+  "tags": []
+}
